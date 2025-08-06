@@ -1,5 +1,5 @@
 // Importação do Firebase
-const db = firebase.firestore();
+
 
 // Variáveis globais
 let calendar;
