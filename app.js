@@ -1,5 +1,5 @@
 // Importação do Firebase
-import { db } from './firebase-config.js';
+
 
 // Variáveis globais
 let calendar;
