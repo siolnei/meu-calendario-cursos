@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Cursos e Colaboradores</title>
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+.main-container {
+    display: flex;
+    height: calc(100vh - 70px); /* Altura total menos o header */
+    gap: 20px; /* Espaço entre calendário e sidebar */
+}
+
+.calendar-container {
+    flex-grow: 1; /* Ocupa todo espaço disponível */
+    min-width: 0; /* Permite que o conteúdo encolha */
+    padding: 20px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar {
+    width: 350px; /* Largura fixa para a sidebar */
+    flex-shrink: 0; /* Impede que a sidebar encolha */
+    background-color: white;
+    padding: 20px;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+    overflow-y: auto;
+}
+
+#calendar {
+    flex-grow: 1; /* O calendário ocupa todo espaço do container */
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+}
+
+/* Responsividade */
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 300px;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-container {
+        flex-direction: column;
+        height: auto;
+    }
+    
+    .sidebar {
+        width: 100%;
+        order: -1; /* Coloca a sidebar acima em mobile */
+    }
+}
+        
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        #calendar {
+            flex-grow: 1;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            height: calc(100% - 40px);
+        }
+        
+        /* Estilos para os eventos no calendário */
+        .fc-event {
+            border: none;
+            padding: 2px 4px;
+            border-radius: 3px;
+            margin: 1px 0;
+            font-size: 0.85rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .fc-daygrid-day-events {
+            min-height: auto;
+        }
+        
+        .fc-daygrid-event {
+            margin: 1px 0;
+        }
+        
+        .fc-event-title {
+            font-weight: bold;
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .fc-event-participants {
+            font-size: 0.7rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+        }
+        
+        .participant-badge {
+            background-color: rgba(255,255,255,0.2);
+            padding: 1px 3px;
+            border-radius: 2px;
+            font-size: 0.6rem;
+        }
+        
+        /* Modais */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            overflow: auto;
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 25px;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: #333;
+        }
+        
+        /* Formulários */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        /* Lista de participantes */
+        .participants-container {
+            border: 1px solid #eee;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .participant-item {
+            padding: 8px;
+            margin: 5px 0;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .participant-item:hover {
+            background-color: #e9e9e9;
+        }
+        
+        .participant-item.selected {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        
+        /* Tabela de colaboradores */
+        .collaborators-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .collaborators-table th, 
+        .collaborators-table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        
+        .collaborators-table th {
+            background-color: #f2f2f2;
+        }
+        
+        /* Sidebar */
+        .upcoming-courses {
+            margin-top: 20px;
+        }
+        
+        .upcoming-course {
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            border-left: 4px solid var(--accent-color);
+        }
+        
+        .upcoming-course h4 {
+            margin: 0 0 5px 0;
+        }
+        
+        .upcoming-course p {
+            margin: 3px 0;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                order: -1;
+            }
+            
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
+                padding: 15px;
+            }
+            
+            .header-actions {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Gestão de Cursos</h1>
+        <div class="header-actions">
+            <button id="newCourseBtn" class="btn btn-success">
+                <i class="fas fa-plus"></i> Novo Curso
+            </button>
+            <button id="newCollaboratorBtn" class="btn btn-primary">
+                <i class="fas fa-user-plus"></i> Novo Colaborador
+            </button>
+        </div>
+    </header>
+    
+    <div class="main-container">
+        <div class="calendar-container">
+            <div id="calendar"></div>
+        </div>
+        
+        <div class="sidebar">
+            <h3>Próximos Cursos</h3>
+            <div id="upcomingCoursesList" class="upcoming-courses">
+                <!-- Cursos serão carregados aqui -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para adicionar/editar cursos -->
+    <div id="courseModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modalTitle">Adicionar Novo Curso</h2>
+            <form id="courseForm">
+                <div class="form-group">
+                    <label for="courseName">Nome do Curso:</label>
+                    <input type="text" id="courseName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="courseDescription">Descrição:</label>
+                    <textarea id="courseDescription" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="courseLocation">Local:</label>
+                    <input type="text" id="courseLocation" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="courseDate">Data e Hora de Início:</label>
+                    <input type="datetime-local" id="courseDate" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="courseEndDate">Data e Hora de Término:</label>
+                    <input type="datetime-local" id="courseEndDate" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Participantes:</label>
+                    <div class="participants-container" id="participantsContainer">
+                        <!-- Colaboradores serão carregados aqui -->
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i> Salvar
+                    </button>
+                    <button type="button" id="cancelCourse" class="btn btn-danger">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </div>
+                
+                <input type="hidden" id="courseId">
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para visualizar curso -->
+    <div id="viewCourseModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="viewCourseTitle"></h2>
+            
+            <div class="summary-item">
+                <strong>Data:</strong> <span id="viewCourseDate"></span>
+            </div>
+            
+            <div class="summary-item">
+                <strong>Horário:</strong> <span id="viewCourseTime"></span>
+            </div>
+            
+            <div class="summary-item">
+                <strong>Local:</strong> <span id="viewCourseLocation"></span>
+            </div>
+            
+            <div class="summary-item">
+                <strong>Descrição:</strong> <span id="viewCourseDescription"></span>
+            </div>
+            
+            <div class="summary-item">
+                <h3>Participantes</h3>
+                <ul id="viewCourseParticipants"></ul>
+            </div>
+            
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button id="editCourseBtn" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Editar
+                </button>
+                <button id="deleteCourseBtn" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Excluir
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para cadastrar colaborador -->
+    <div id="collaboratorModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Cadastrar Novo Colaborador</h2>
+            <form id="collaboratorForm">
+                <div class="form-group">
+                    <label for="collaboratorName">Nome do Colaborador:</label>
+                    <input type="text" id="collaboratorName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="collaboratorRole">Cargo/Função:</label>
+                    <input type="text" id="collaboratorRole">
+                </div>
+                
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i> Salvar
+                    </button>
+                    <button type="button" id="cancelCollaborator" class="btn btn-danger">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para listar colaboradores -->
+    <div id="collaboratorsListModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="close">&times;</span>
+            <h2>Lista de Colaboradores</h2>
+            
+            <table class="collaborators-table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Cargo/Função</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="collaboratorsTableBody">
+                    <!-- Colaboradores serão carregados aqui -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/pt-br.js'></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <script>
+
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyD3kjJk0qIvYcxat9QgRk-5Z-tv9S1dSm4",
+            authDomain: "calenario-de-cursos.firebaseapp.com",
+            projectId: "calenario-de-cursos",
+            storageBucket: "calenario-de-cursos.appspot.com",
+            messagingSenderId: "968930225234",
+            appId: "1:968930225234:web:f69ee44bf4ba1bf4ccc38b",
+            measurementId: "G-M51RRXD1QL"
+        };
+
+        // Inicialização do Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Variáveis globais
+        let calendar;
+        let currentCourse = null;
+        let currentCollaborator = null;
+        let collaborators = [];
+        let upcomingCourses = [];
+        const courseColors = [
+            '#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', 
+            '#1abc9c', '#d35400', '#34495e', '#16a085', '#c0392b'
+        ];
+
+        // Inicialização do calendário
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCalendar();
+            setupEventListeners();
+            loadCollaborators();
+            loadUpcomingCourses();
+        });
+
+        function initializeCalendar() {
+            const calendarEl = document.getElementById('calendar');
+            
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'pt-br',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                eventClick: function(info) {
+                    info.jsEvent.preventDefault();
+                    showCourseDetails(info.event);
+                },
+                dateClick: function(info) {
+                    openAddModal(info.date);
+                },
+                events: loadCourses,
+                eventContent: function(arg) {
+                    // Customização do conteúdo do evento
+                    const eventEl = document.createElement('div');
+                    
+                    const titleEl = document.createElement('div');
+                    titleEl.className = 'fc-event-title';
+                    titleEl.textContent = arg.event.title;
+                    
+                    eventEl.appendChild(titleEl);
+                    
+                    return { domNodes: [eventEl] };
+                },
+                eventDidMount: function(arg) {
+                    // Aplicar cores diferentes para cada curso
+                    const eventId = arg.event.id;
+                    const colorIndex = parseInt(eventId.substring(eventId.length - 1)) % courseColors.length;
+                    arg.el.style.backgroundColor = courseColors[colorIndex];
+                    arg.el.style.borderColor = courseColors[colorIndex];
+                    
+                    // Ajustar altura para caber o texto
+                    arg.el.style.height = 'auto';
+                    arg.el.style.minHeight = '20px';
+                },
+                dayCellContent: function(arg) {
+                    // Ajustar conteúdo da célula do dia
+                    arg.dayNumberText = arg.dayNumberText.replace('º', '');
+                    return { html: arg.dayNumberText };
+                },
+                height: '100%',
+                contentHeight: 'auto'
+            });
+
+            calendar.render();
+        }
+
+        function setupEventListeners() {
+            // Novo curso
+            document.getElementById('newCourseBtn').addEventListener('click', () => {
+                currentCourse = null;
+                resetCourseForm();
+                document.getElementById('modalTitle').textContent = "Adicionar Novo Curso";
+                document.getElementById('courseModal').style.display = 'block';
+            });
+
+            // Novo colaborador
+            document.getElementById('newCollaboratorBtn').addEventListener('click', () => {
+                currentCollaborator = null;
+                resetCollaboratorForm();
+                document.getElementById('collaboratorModal').style.display = 'block';
+            });
+
+            // Fechar modais
+            document.querySelectorAll('.close').forEach(btn => {
+                btn.addEventListener('click', closeAllModals);
+            });
+
+            // Cancelar curso
+            document.getElementById('cancelCourse').addEventListener('click', () => {
+                document.getElementById('courseModal').style.display = 'none';
+            });
+
+            // Cancelar colaborador
+            document.getElementById('cancelCollaborator').addEventListener('click', () => {
+                document.getElementById('collaboratorModal').style.display = 'none';
+            });
+
+            // Formulário de curso
+            document.getElementById('courseForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await saveCourse();
+            });
+
+            // Formulário de colaborador
+            document.getElementById('collaboratorForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await saveCollaborator();
+            });
+
+            // Editar curso
+            document.getElementById('editCourseBtn').addEventListener('click', () => {
+                editCurrentCourse();
+            });
+
+            // Excluir curso
+            document.getElementById('deleteCourseBtn').addEventListener('click', () => {
+                deleteCurrentCourse();
+            });
+        }
+
+        // Carregar cursos do Firestore
+        async function loadCourses(info, successCallback, failureCallback) {
+            try {
+                const snapshot = await db.collection("cursos")
+                    .where("data", ">=", firebase.firestore.Timestamp.fromDate(info.start))
+                    .where("data", "<=", firebase.firestore.Timestamp.fromDate(info.end))
+                    .orderBy("data", "asc")
+                    .get();
+
+                const events = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    return {
+                        id: doc.id,
+                        title: data.nome,
+                        start: data.data.toDate(),
+                        end: data.dataVencimento.toDate(),
+                        allDay: false,
+                        extendedProps: {
+                            descricao: data.descricao,
+                            local: data.local,
+                            participantes: data.participantes || []
+                        }
+                    };
+                });
+                
+                if (successCallback) {
+                    successCallback(events);
+                } else {
+                    calendar.refetchEvents();
+                }
+                
+                // Atualizar lista de próximos cursos
+                loadUpcomingCourses();
+            } catch (error) {
+                console.error("Erro ao carregar cursos:", error);
+                if (failureCallback) failureCallback(error);
+            }
+        }
+
+        // Carregar colaboradores do Firestore
+        async function loadCollaborators() {
+            try {
+                const snapshot = await db.collection("colaboradores").orderBy("nome").get();
+                collaborators = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    return {
+                        id: doc.id,
+                        nome: data.nome,
+                        cargo: data.cargo || ""
+                    };
+                });
+                
+                updateParticipantsSelect();
+                updateCollaboratorsTable();
+            } catch (error) {
+                console.error("Erro ao carregar colaboradores:", error);
+            }
+        }
+
+        // Carregar próximos cursos para a sidebar
+        async function loadUpcomingCourses() {
+            try {
+                const now = new Date();
+                const snapshot = await db.collection("cursos")
+                    .where("data", ">=", firebase.firestore.Timestamp.fromDate(now))
+                    .orderBy("data", "asc")
+                    .limit(5)
+                    .get();
+
+                upcomingCourses = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    return {
+                        id: doc.id,
+                        nome: data.nome,
+                        data: data.data.toDate(),
+                        dataVencimento: data.dataVencimento.toDate(),
+                        local: data.local,
+                        descricao: data.descricao || ""
+                    };
+                });
+
+                updateUpcomingCoursesList();
+            } catch (error) {
+                console.error("Erro ao carregar próximos cursos:", error);
+            }
+        }
+
+        // Atualizar lista de próximos cursos na sidebar
+        function updateUpcomingCoursesList() {
+            const container = document.getElementById('upcomingCoursesList');
+            container.innerHTML = '';
+            
+            if (upcomingCourses.length === 0) {
+                container.innerHTML = '<p>Nenhum curso agendado</p>';
+                return;
+            }
+            
+            upcomingCourses.forEach(course => {
+                const courseEl = document.createElement('div');
+                courseEl.className = 'upcoming-course';
+                
+                const titleEl = document.createElement('h4');
+                titleEl.textContent = course.nome;
+                
+                const dateEl = document.createElement('p');
+                dateEl.innerHTML = `<strong>Data:</strong> ${course.data.toLocaleDateString('pt-BR')}`;
+                
+                const timeEl = document.createElement('p');
+                timeEl.innerHTML = `<strong>Horário:</strong> ${course.data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} - ${course.dataVencimento.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+                
+                const locationEl = document.createElement('p');
+                locationEl.innerHTML = `<strong>Local:</strong> ${course.local}`;
+                
+                courseEl.appendChild(titleEl);
+                courseEl.appendChild(dateEl);
+                courseEl.appendChild(timeEl);
+                courseEl.appendChild(locationEl);
+                
+                // Adicionar evento de clique para visualizar o curso
+                courseEl.addEventListener('click', () => {
+                    const event = {
+                        id: course.id,
+                        title: course.nome,
+                        start: course.data,
+                        end: course.dataVencimento,
+                        extendedProps: {
+                            descricao: course.descricao,
+                            local: course.local,
+                            participantes: []
+                        }
+                    };
+                    showCourseDetails(event);
+                });
+                
+                container.appendChild(courseEl);
+            });
+        }
+
+        // Atualizar select de participantes com duplo clique
+        function updateParticipantsSelect() {
+            const container = document.getElementById('participantsContainer');
+            container.innerHTML = '';
+            
+            collaborators.forEach(collaborator => {
+                const item = document.createElement('div');
+                item.className = 'participant-item';
+                item.textContent = `${collaborator.nome}${collaborator.cargo ? ` (${collaborator.cargo})` : ''}`;
+                item.dataset.id = collaborator.id;
+                item.dataset.name = collaborator.nome;
+                
+                // Adicionar evento de duplo clique para selecionar/desselecionar
+                item.addEventListener('dblclick', function() {
+                    this.classList.toggle('selected');
+                });
+                
+                container.appendChild(item);
+            });
+        }
+
+        // Atualizar tabela de colaboradores
+        function updateCollaboratorsTable() {
+            const tbody = document.getElementById('collaboratorsTableBody');
+            tbody.innerHTML = '';
+            
+            collaborators.forEach(collaborator => {
+                const tr = document.createElement('tr');
+                
+                const tdNome = document.createElement('td');
+                tdNome.textContent = collaborator.nome;
+                
+                const tdCargo = document.createElement('td');
+                tdCargo.textContent = collaborator.cargo || "-";
+                
+                const tdActions = document.createElement('td');
+                
+                tr.appendChild(tdNome);
+                tr.appendChild(tdCargo);
+                tr.appendChild(tdActions);
+                
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Salvar curso no Firestore
+        async function saveCourse() {
+            // Obter participantes selecionados
+            const selectedItems = document.querySelectorAll('#participantsContainer .participant-item.selected');
+            const participantes = Array.from(selectedItems).map(item => item.dataset.name);
+            
+            // Obter valores do formulário
+            const courseName = document.getElementById('courseName').value.trim();
+            const courseDescription = document.getElementById('courseDescription').value.trim();
+            const courseLocation = document.getElementById('courseLocation').value.trim();
+            const courseDate = document.getElementById('courseDate').value;
+            const courseEndDate = document.getElementById('courseEndDate').value;
+
+            // Validação básica
+            if (!courseName || !courseLocation || !courseDate || !courseEndDate) {
+                alert("Por favor, preencha todos os campos obrigatórios!");
+                return;
+            }
+
+            const startDate = new Date(courseDate);
+            const endDate = new Date(courseEndDate);
+
+            if (startDate >= endDate) {
+                alert("A data de término deve ser posterior à data de início!");
+                return;
+            }
+
+            // Preparar dados do curso
+            const courseData = {
+                nome: courseName,
+                descricao: courseDescription,
+                local: courseLocation,
+                data: firebase.firestore.Timestamp.fromDate(startDate),
+                dataVencimento: firebase.firestore.Timestamp.fromDate(endDate),
+                participantes: participantes,
+                status: "ativo",
+                atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            try {
+                if (currentCourse) {
+                    // Atualizar curso existente - não incluir criadoEm
+                    await db.collection("cursos").doc(currentCourse.id).update(courseData);
+                } else {
+                    // Criar novo curso - incluir criadoEm
+                    courseData.criadoEm = firebase.firestore.FieldValue.serverTimestamp();
+                    await db.collection("cursos").add(courseData);
+                }
+
+                loadCourses();
+                document.getElementById('courseModal').style.display = 'none';
+                resetCourseForm();
+            } catch (error) {
+                console.error("Erro ao salvar curso:", error);
+                alert(`Erro ao salvar curso: ${error.message}`);
+            }
+        }
+
+        // Salvar colaborador no Firestore
+        async function saveCollaborator() {
+            const collaboratorData = {
+                nome: document.getElementById('collaboratorName').value,
+                cargo: document.getElementById('collaboratorRole').value || "",
+                criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            try {
+                if (currentCollaborator) {
+                    await db.collection("colaboradores").doc(currentCollaborator.id).update(collaboratorData);
+                } else {
+                    await db.collection("colaboradores").add(collaboratorData);
+                }
+
+                loadCollaborators();
+                document.getElementById('collaboratorModal').style.display = 'none';
+                resetCollaboratorForm();
+            } catch (error) {
+                console.error("Erro ao salvar colaborador:", error);
+                alert("Ocorreu um erro ao salvar o colaborador. Por favor, tente novamente.");
+            }
+        }
+
+        // Mostrar detalhes do curso
+        function showCourseDetails(event) {
+            currentCourse = {
+                id: event.id,
+                nome: event.title,
+                data: event.start,
+                dataVencimento: event.end,
+                descricao: event.extendedProps.descricao,
+                local: event.extendedProps.local,
+                participantes: event.extendedProps.participantes || [],
+                criadoEm: event.extendedProps.criadoEm
+            };
+
+            document.getElementById('viewCourseTitle').textContent = currentCourse.nome;
+            document.getElementById('viewCourseDate').textContent = currentCourse.data.toLocaleDateString('pt-BR', { 
+                weekday: 'long', 
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric' 
+            });
+            document.getElementById('viewCourseTime').textContent = 
+                `${currentCourse.data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} - ${currentCourse.dataVencimento.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+            document.getElementById('viewCourseLocation').textContent = currentCourse.local;
+            document.getElementById('viewCourseDescription').textContent = currentCourse.descricao || "Sem descrição";
+
+            const participantsList = document.getElementById('viewCourseParticipants');
+            participantsList.innerHTML = '';
+            
+            if (currentCourse.participantes.length > 0) {
+                currentCourse.participantes.forEach(participant => {
+                    const li = document.createElement('li');
+                    li.textContent = participant;
+                    participantsList.appendChild(li);
+                });
+            } else {
+                participantsList.innerHTML = '<li>Nenhum participante cadastrado</li>';
+            }
+
+            document.getElementById('viewCourseModal').style.display = 'block';
+        }
+
+        // Editar curso atual
+        function editCurrentCourse() {
+            if (!currentCourse) return;
+            
+            document.getElementById('viewCourseModal').style.display = 'none';
+            
+            document.getElementById('modalTitle').textContent = "Editar Curso";
+            document.getElementById('courseName').value = currentCourse.nome;
+            document.getElementById('courseDescription').value = currentCourse.descricao || '';
+            document.getElementById('courseLocation').value = currentCourse.local || '';
+            document.getElementById('courseDate').value = formatDateTimeForInput(currentCourse.data);
+            document.getElementById('courseEndDate').value = formatDateTimeForInput(currentCourse.dataVencimento);
+            
+            // Selecionar participantes
+            const participantItems = document.querySelectorAll('#participantsContainer .participant-item');
+            participantItems.forEach(item => {
+                if (currentCourse.participantes.includes(item.dataset.name)) {
+                    item.classList.add('selected');
+                }
+            });
+            
+            document.getElementById('courseModal').style.display = 'block';
+        }
+
+        // Excluir curso atual
+        async function deleteCurrentCourse() {
+            if (!currentCourse || !confirm('Tem certeza que deseja excluir este curso?')) return;
+            
+            try {
+                await db.collection("cursos").doc(currentCourse.id).delete();
+                loadCourses();
+                document.getElementById('viewCourseModal').style.display = 'none';
+            } catch (error) {
+                console.error("Erro ao excluir curso:", error);
+                alert("Ocorreu um erro ao excluir o curso. Por favor, tente novamente.");
+            }
+        }
+
+        // Formatar data para input datetime-local
+        function formatDateTimeForInput(date) {
+            const d = new Date(date);
+            d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+            return d.toISOString().slice(0, 16);
+        }
+
+        // Fechar todos os modais
+        function closeAllModals() {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.style.display = 'none';
+            });
+        }
+
+        // Resetar formulário de curso
+        function resetCourseForm() {
+            document.getElementById('courseForm').reset();
+            document.getElementById('courseId').value = '';
+            const items = document.querySelectorAll('#participantsContainer .participant-item');
+            items.forEach(item => {
+                item.classList.remove('selected');
+            });
+        }
+
+        // Resetar formulário de colaborador
+        function resetCollaboratorForm() {
+            document.getElementById('collaboratorForm').reset();
+        }
+
+        // Abrir modal de adição com data pré-selecionada
+        function openAddModal(date) {
+            currentCourse = null;
+            resetCourseForm();
+            document.getElementById('modalTitle').textContent = "Adicionar Novo Curso";
+            
+            if (date) {
+                const dateStr = formatDateTimeForInput(date);
+                document.getElementById('courseDate').value = dateStr;
+                document.getElementById('courseEndDate').value = dateStr;
+            }
+            
+            document.getElementById('courseModal').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
