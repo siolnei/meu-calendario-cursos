@@ -7,6 +7,14 @@ let currentCourse = null;
 let currentCollaborator = null;
 let collaborators = [];
 
+        // Inicialização do calendário
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCalendar();
+            setupEventListeners();
+            loadCollaborators();
+            loadUpcomingCourses();
+        });
+
 // Função principal de inicialização
 document.addEventListener('DOMContentLoaded', function() {
     initializeCalendar();
